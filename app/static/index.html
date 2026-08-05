@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arabic Voice Transcription Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation for Future Client Features -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">🎙️</div>
+        <div class="brand-text">
+          <h2>Sawt AI</h2>
+          <span>Voice Transcription</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-page="record-page" id="navStudio">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+          </svg>
+          <span>Live Studio & STT</span>
+        </button>
+        <button class="nav-item" data-page="surah-page" id="navSurah">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          <span>Surah Al-Hamd Recitation</span>
+          <span class="badge new">New</span>
+        </button>
+        <button class="nav-item disabled" data-page="feature-3" title="Coming in next prototype step">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+          </svg>
+          <span>Speaker Diarization</span>
+          <span class="badge">Soon</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="model-badge">
+          <span class="dot"></span>
+          <span>Wav2Vec2 Arabic XLS-R</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="top-bar">
+        <div>
+          <h1>Voice Recorder & Transcription</h1>
+          <p class="subtitle">Record live speech in .WAV format or upload audio files to transcribe in real-time.</p>
+        </div>
+        <div class="status-indicator" id="apiStatus">
+          <span class="status-dot green"></span>
+          <span class="status-text">Backend Connected</span>
+        </div>
+      </header>
+
+      <!-- Main Recording Page -->
+      <section class="workspace page-section" id="studioPage">
+        <!-- Input Panel: Record / Upload -->
+        <div class="card input-card">
+          <div class="tab-header">
+            <button class="tab-btn active" id="tabRecord">🎙️ Record Audio</button>
+            <button class="tab-btn" id="tabUpload">📁 Upload File</button>
+          </div>
+
+          <!-- Tab Content: Mic Recorder -->
+          <div class="tab-content" id="contentRecord">
+            <div class="visualizer-container">
+              <canvas id="waveformCanvas" width="600" height="120"></canvas>
+              <div class="timer" id="timerDisplay">00:00</div>
+            </div>
+
+            <div class="controls-row">
+              <button class="btn btn-record" id="btnRecord">
+                <span class="rec-icon"></span>
+                <span id="btnRecordText">Start Recording</span>
+              </button>
+              <button class="btn btn-secondary" id="btnStop" disabled>Stop</button>
+            </div>
+
+            <!-- Pre-transcribe Audio Preview -->
+            <div class="audio-preview-box hidden" id="previewBox">
+              <div class="preview-header">
+                <span>Recorded Audio (.wav)</span>
+                <a id="downloadWavBtn" class="download-link" download="recording.wav">⬇ Download WAV</a>
+              </div>
+              <audio id="audioPlayback" controls></audio>
+            </div>
+          </div>
+
+          <!-- Tab Content: File Upload -->
+          <div class="tab-content hidden" id="contentUpload">
+            <div class="dropzone" id="dropzone">
+              <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+              </svg>
+              <p>Drag and drop your audio file here (.wav, .mp3, .m4a)</p>
+              <span>or click to browse from device</span>
+              <input type="file" id="fileInput" accept="audio/*" hidden>
+            </div>
+            <div class="file-info hidden" id="fileInfoBox">
+              <span id="fileName">sample.wav</span>
+              <button class="btn-clear" id="btnClearFile">✕</button>
+            </div>
+          </div>
+
+          <div class="action-footer">
+            <button class="btn btn-primary" id="btnTranscribe" disabled>
+              <span>✨ Transcribe Audio</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Output Panel: Transcription Result -->
+        <div class="card result-card">
+          <div class="card-header">
+            <h3>Transcription Output</h3>
+            <button class="btn-icon" id="btnCopy" title="Copy Text" disabled>
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="result-body" id="resultContainer">
+            <div class="placeholder-state" id="placeholderState">
+              <div class="wave-lines">
+                <span></span><span></span><span></span><span></span>
+              </div>
+              <p>Record audio or upload a file and click <strong>Transcribe Audio</strong> to view predicted Arabic text here.</p>
+            </div>
+
+            <div class="loading-state hidden" id="loadingState">
+              <div class="spinner"></div>
+              <p>Processing audio & running model inference...</p>
+              <span id="inferenceTimer">0.0s</span>
+            </div>
+
+            <div class="transcript-display hidden" id="transcriptDisplay" dir="rtl" lang="ar">
+            </div>
+          </div>
+
+          <div class="result-footer hidden" id="resultFooter">
+            <span id="filePathInfo" class="path-info">Saved to: data/recordings/...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Surah Al-Hamd Recitation Page -->
+      <section class="workspace page-section hidden" id="surahPage">
+        <!-- Ayah Selection Panel -->
+        <div class="card surah-selector-card">
+          <div class="surah-header">
+            <h2>سُورَةُ الْفَاتِحَة (سورة الحمد)</h2>
+            <p>Select an Ayah below, tap record, and recite it clearly to verify your pronunciation.</p>
+          </div>
+
+          <!-- Ayah List Buttons -->
+          <div class="ayah-list" id="ayahListContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Recitation & Accuracy Result Panel -->
+        <div class="card surah-practice-card">
+          <div class="active-ayah-display">
+            <span class="ayah-badge" id="activeAyahNum">Ayah 1</span>
+            <div class="ayah-text-large" id="activeAyahText" dir="rtl" lang="ar">
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            </div>
+          </div>
+
+          <div class="recitation-controls">
+            <div class="rec-timer-badge" id="surahTimer">00:00</div>
+            <div class="controls-row">
+              <button class="btn btn-record" id="btnSurahRecord">
+                <span class="rec-icon"></span>
+                <span id="btnSurahRecordText">Recite Selected Ayah</span>
+              </button>
+              <button class="btn btn-secondary" id="btnSurahStop" disabled>Stop</button>
+            </div>
+          </div>
+
+          <!-- Analysis Feedback Box -->
+          <div class="verification-box">
+            <div class="verif-header">
+              <h3>Recitation Accuracy Feedback</h3>
+              <span class="accuracy-score-pill hidden" id="accuracyPill">0% Match</span>
+            </div>
+
+            <div class="verif-body" id="verifBody">
+              <div class="placeholder-state" id="surahPlaceholder">
+                <p>Click <strong>"Recite Selected Ayah"</strong> to speak. Our STT model will compare your recitation with the authentic Ayah text and highlight words in <strong style="color: #10b981;">Green (Correct)</strong> or <strong style="color: #ef4444;">Red (Mismatched)</strong>.</p>
+              </div>
+
+              <div class="loading-state hidden" id="surahLoading">
+                <div class="spinner"></div>
+                <p>Analyzing recitation pronunciation against Ayah text...</p>
+              </div>
+
+              <div class="verification-results hidden" id="surahResultDisplay">
+                <div class="word-comparison-box">
+                  <h4>Target Ayah Pronunciation Matching:</h4>
+                  <div class="formatted-ayah-words" id="formattedWordsContainer" dir="rtl" lang="ar">
+                    <!-- Word spans populated with .word-correct or .word-wrong -->
+                  </div>
+                </div>
+
+                <div class="raw-detected-box">
+                  <span class="raw-label">Model Detected Transcription:</span>
+                  <div class="detected-text" id="detectedText" dir="rtl" lang="ar"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/recorder.js"></script>
+</body>
+</html>
