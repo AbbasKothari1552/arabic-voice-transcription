@@ -1,0 +1,6 @@
+.env
+venv
+
+local_models/**
+__pycache__/**
+*.pyc
